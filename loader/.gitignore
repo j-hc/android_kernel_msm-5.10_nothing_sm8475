@@ -1,0 +1,7 @@
+*.mk
+libs
+obj
+*.sh
+encode
+encode.c
+encoded_*
