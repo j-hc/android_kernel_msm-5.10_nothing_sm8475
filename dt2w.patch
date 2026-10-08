@@ -1,0 +1,42 @@
+diff --git a/drivers/input/touchscreen/goodix_berlin_driver/goodix_ts_gesture.c b/drivers/input/touchscreen/goodix_berlin_driver/goodix_ts_gesture.c
+index 2dcd91884..6fc6077ef 100644
+--- a/drivers/input/touchscreen/goodix_berlin_driver/goodix_ts_gesture.c
++++ b/drivers/input/touchscreen/goodix_berlin_driver/goodix_ts_gesture.c
+@@ -280,13 +280,21 @@ static int gsx_gesture_ist(struct goodix_ts_core *cd,
+ 	switch (gs_event.gesture_type) {
+ 	case GOODIX_GESTURE_SINGLE_TAP:
+ 		if (cd->gesture_type & GESTURE_SINGLE_TAP) {
+-			ts_info("get SINGLE-TAP gesture");
+-			input_report_key(cd->input_dev, KEY_WAKEUP, 1);
+-			// input_report_key(cd->input_dev, KEY_GOTO, 1);
+-			input_sync(cd->input_dev);
+-			input_report_key(cd->input_dev, KEY_WAKEUP, 0);
+-			// input_report_key(cd->input_dev, KEY_GOTO, 0);
+-			input_sync(cd->input_dev);
++			static u64 st_prev_ns = 0;
++			
++			ts_info("get SINGLE-TAP gesture. Wait for the 2nd one..");
++			u64 st_now_ns = ktime_to_ns(ktime_get_boottime());
++			// 220ms
++			if (st_now_ns < st_prev_ns + 220ULL * 1000000ULL) {
++				input_report_key(cd->input_dev, KEY_WAKEUP, 1);
++				// input_report_key(cd->input_dev, KEY_GOTO, 1);
++				input_sync(cd->input_dev);
++				input_report_key(cd->input_dev, KEY_WAKEUP, 0);
++				// input_report_key(cd->input_dev, KEY_GOTO, 0);
++				input_sync(cd->input_dev);
++			} else {
++				st_prev_ns = st_now_ns;
++			}
+ 		} else {
+ 			ts_debug("not enable SINGLE-TAP");
+ 		}
+@@ -442,7 +450,7 @@ int gesture_module_init(void)
+ 
+ 	module_initialized = true;
+ 	goodix_register_ext_module_no_wait(&gsx_gesture->module);
+-	ts_info("gesture module init success");
++	ts_info("gesture module init success (dt2w)");
+ 
+ 	return 0;
+ 
